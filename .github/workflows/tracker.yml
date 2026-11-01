@@ -4,7 +4,17 @@ on:
   schedule:
     # Run every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)
     - cron: '0 */6 * * *'
-  workflow_dispatch: # Allows manual trigger from GitHub UI anytime
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Choose action to run'
+        required: true
+        default: 'check'
+        type: choice
+        options:
+          - 'check'
+          - 'test'
+          - 'force'
 
 permissions:
   contents: write # Needed to commit and push updated known_updates.json
@@ -27,7 +37,17 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           FEED_URL: 'https://raw.githubusercontent.com/XiaomiFirmwareUpdater/miui-updates-tracker/master/rss/klee.xml'
         run: |
-          python tracker.py
+          ACTION="${{ inputs.action }}"
+          if [ "$ACTION" = "test" ]; then
+            echo "[*] Running in TEST mode..."
+            python tracker.py --test
+          elif [ "$ACTION" = "force" ]; then
+            echo "[*] Running in FORCE mode..."
+            python tracker.py --force-notify
+          else
+            echo "[*] Running in standard CHECK mode..."
+            python tracker.py
+          fi
 
       - name: Commit and push changes
         run: |
