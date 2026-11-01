@@ -1,0 +1,20 @@
+name = "klee-update-tracker"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[triggers]
+# Run every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)
+crons = ["0 */6 * * *"]
+
+# Cloudflare KV binding for persistent storage of seen MD5 hashes
+# Create KV with: npx wrangler kv:namespace create UPDATES_KV
+# Then put the generated id below:
+# [[kv_namespaces]]
+# binding = "UPDATES_KV"
+# id = "YOUR_KV_NAMESPACE_ID"
+
+[vars]
+FEED_URL = "https://raw.githubusercontent.com/XiaomiFirmwareUpdater/miui-updates-tracker/master/rss/klee.xml"
+# Set secrets via wrangler:
+# npx wrangler secret put TELEGRAM_BOT_TOKEN
+# npx wrangler secret put TELEGRAM_CHAT_ID

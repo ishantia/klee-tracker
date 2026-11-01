@@ -1,0 +1,44 @@
+name: Check Xiaomi POCO X8 Pro Updates
+
+on:
+  schedule:
+    # Run every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub UI anytime
+
+permissions:
+  contents: write # Needed to commit and push updated known_updates.json
+
+jobs:
+  check-updates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Update Tracker
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          FEED_URL: 'https://raw.githubusercontent.com/XiaomiFirmwareUpdater/miui-updates-tracker/master/rss/klee.xml'
+        run: |
+          python tracker.py
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -f known_updates.json ]; then
+            git add known_updates.json
+            if ! git diff --cached --quiet; then
+              git commit -m "chore: update known_updates.json [skip ci]"
+              git push
+            else
+              echo "No changes in known_updates.json"
+            fi
+          fi
